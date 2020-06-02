@@ -13,3 +13,5 @@ Bu şekilde artık bilgisayarınızda ibmmq çalışıyor vaziyette olacaktır. 
 1. Container içine girin.  ```docker exec -ti <your-container-id> bin/bash```
 1. ```dspmqver``` komutu ile versiyon bilgisi görebilirsiniz.
 1. ```dspmq``` komutu ise anlık queue durumunu verir.
+
+Proje için kullanım dökümanı için [buraya](https://github.com/TufanOzdemir/ibmmqsample/wiki/Kullan%C4%B1m) tıklayınız.
