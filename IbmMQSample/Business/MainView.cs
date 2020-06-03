@@ -34,5 +34,33 @@ namespace IbmMQSample.Business
                 Console.WriteLine(ex.ToString());
             }
         }
+
+        [ApplicationMetadata(Description = "Publish Message to subscriber")]
+        public void Publish(string message)
+        {
+            try
+            {
+                var mqservice = (IQueueManager)ServiceProviderContainer.Instance.GetService(typeof(IQueueManager));
+                mqservice.Publish(message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        [ApplicationMetadata(Description = "Listen Messages from publisher")]
+        public void Subscribe([Option(LongName = "topic", ShortName = "n", Description = "Topic name for subscribe")]string topicName)
+        {
+            try
+            {
+                var mqservice = (IQueueManager)ServiceProviderContainer.Instance.GetService(typeof(IQueueManager));
+                mqservice.Subscribe(topicName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
     }
 }

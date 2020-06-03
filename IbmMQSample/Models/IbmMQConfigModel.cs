@@ -10,5 +10,6 @@
         public string ManagerName { get; set; }
         public string Password { get; set; }
         public string QueueName { get; set; }
+        public string TopicName { get; set; }
     }
 }

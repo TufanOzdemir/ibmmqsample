@@ -6,6 +6,7 @@
     "Port": 1414,
     "ManagerName": "QM1",
     "QueueName": "DEV.QUEUE.1",
-    "Channel": "DEV.APP.SVRCONN"
+    "Channel": "DEV.APP.SVRCONN",
+    "TopicName": "dev/"
   }
 }

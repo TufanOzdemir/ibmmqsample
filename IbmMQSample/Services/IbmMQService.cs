@@ -1,10 +1,8 @@
-﻿using CommandDotNet.Attributes;
-using IBM.XMS;
+﻿using IBM.XMS;
 using IbmMQSample.Helper;
 using IbmMQSample.Interface;
 using IbmMQSample.Models;
 using System;
-using System.Threading;
 
 namespace IbmMQSample.Services
 {
@@ -23,11 +21,38 @@ namespace IbmMQSample.Services
             var textMessage = sessionWMQ.CreateTextMessage();
             textMessage.Text = value;
             producer.Send(textMessage);
-            connectionWMQ.Stop();
+
+            producer.Close();
+            connectionWMQ.Close();
+            destination.Dispose();
+            connectionWMQ.Dispose();
             Console.WriteLine("Send Successfuly");
         }
 
-        public void Listen([Option(LongName = "Second", ShortName = "s", Description = "Time for listen.")]int second = 1)
+        public void Publish(string value)
+        {
+            var connectionFactory = (IConnectionFactory)ServiceProviderContainer.Instance.GetService(typeof(IConnectionFactory));
+            var mqConfigModel = (IbmMQConfigModel)ServiceProviderContainer.Instance.GetService(typeof(IbmMQConfigModel));
+
+            var connectionWMQ = connectionFactory.CreateConnection();
+            var sessionWMQ = connectionWMQ.CreateSession(false, AcknowledgeMode.AutoAcknowledge);
+            var destination = sessionWMQ.CreateTopic(mqConfigModel.TopicName);
+            destination.SetIntProperty(XMSC.WMQ_TARGET_CLIENT, XMSC.WMQ_TARGET_DEST_MQ);
+            var producer = sessionWMQ.CreateProducer(destination);
+            connectionWMQ.Start();
+
+            var textMessage = sessionWMQ.CreateTextMessage();
+            textMessage.Text = value;
+            producer.Send(textMessage);
+
+            producer.Close();
+            connectionWMQ.Close();
+            destination.Dispose();
+            connectionWMQ.Dispose();
+            Console.WriteLine("Publish Successfuly");
+        }
+
+        public void Listen(int second = 1)
         {
             var connectionFactory = (IConnectionFactory)ServiceProviderContainer.Instance.GetService(typeof(IConnectionFactory));
             var mqConfigModel = (IbmMQConfigModel)ServiceProviderContainer.Instance.GetService(typeof(IbmMQConfigModel));
@@ -38,20 +63,55 @@ namespace IbmMQSample.Services
             var session = connection.CreateSession(false, AcknowledgeMode.AutoAcknowledge);
             IDestination topic = session.CreateQueue(mqConfigModel.QueueName);
             IMessageConsumer consumer = session.CreateConsumer(topic);
-            consumer.MessageListener = new MessageListener(IbmMQService.OnMessage);
             connection.Start();
 
+            Console.WriteLine("Waiting for messages....");
             for (int i = 0; i < second; i++)
             {
-                Console.WriteLine("Waiting for messages....");
-                Thread.Sleep(1000);
+                var textMessage = (ITextMessage)consumer.Receive(1000);
+                if (textMessage != null)
+                {
+                    Console.WriteLine(textMessage.Text);
+                    if (textMessage.Text.Equals("Exit"))
+                    {
+                        break;
+                    }
+                }
             }
-            connection.Stop();
+            connection.Close();
+            consumer.Close();
+            topic.Dispose();
         }
 
-        static void OnMessage(IMessage msg)
+        public void Subscribe(string topicName)
         {
-            Console.WriteLine(msg);
+            var connectionFactory = (IConnectionFactory)ServiceProviderContainer.Instance.GetService(typeof(IConnectionFactory));
+            var mqConfigModel = (IbmMQConfigModel)ServiceProviderContainer.Instance.GetService(typeof(IbmMQConfigModel));
+
+            var connection = connectionFactory.CreateConnection();
+            connection.ExceptionListener = new ExceptionListener(IbmMQService.OnException);
+
+            var session = connection.CreateSession(false, AcknowledgeMode.AutoAcknowledge);
+            IDestination topic = session.CreateTopic(topicName);
+            IMessageConsumer subscriber = session.CreateConsumer(topic);
+            connection.Start();
+
+            Console.WriteLine("Waiting for messages....");
+            while(true)
+            {
+                var textMessage = (ITextMessage)subscriber.Receive(1000);
+                if (textMessage != null)
+                {
+                    Console.WriteLine(textMessage.Text);
+                    if (textMessage.Text.Equals("Exit"))
+                    {
+                        break;
+                    }
+                }
+            }
+            connection.Close();
+            subscriber.Close();
+            topic.Dispose();
         }
 
         static void OnException(Exception ex)
