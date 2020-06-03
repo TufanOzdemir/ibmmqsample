@@ -1,3 +1,5 @@
+Read me other language :  [Türkçe](https://github.com/TufanOzdemir/ibmmqsample/edit/master/README.md), [English](https://github.com/TufanOzdemir/ibmmqsample/edit/master/README.en.md)
+
 Bu proje şuan için sadece ibmmq için temel kodlar içerse de diğer mq servislerini de test etmek için uygun bir alt yapı sağlar. Kurulum ve kullanım için wiki ekranlarını inceleyebilirsiniz. 
 1. [Docker için kurulum](https://github.com/TufanOzdemir/ibmmqsample/wiki/Kurulum)
 1. [Kullanım](https://github.com/TufanOzdemir/ibmmqsample/wiki/Kullan%C4%B1m)
@@ -11,3 +13,4 @@ Standart Queue yapısı ekleme ve dağıtım düzenli şekilde her seferinde ba�
 Pub/Sub gelen isteği o an kanala bağlı tüm clientlara dağıtmaktadır.
 
 ![Pub/Sub](https://github.com/TufanOzdemir/ibmmqsample/blob/master/IbmMQSample/wiki/QueuePubSub.png)
+
