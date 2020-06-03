@@ -10,46 +10,12 @@ namespace IbmMQSample.Services
     {
         public void Send(string value)
         {
-            var connectionFactory = (IConnectionFactory)ServiceProviderContainer.Instance.GetService(typeof(IConnectionFactory));
-            var mqConfigModel = (IbmMQConfigModel)ServiceProviderContainer.Instance.GetService(typeof(IbmMQConfigModel));
-
-            var connectionWMQ = connectionFactory.CreateConnection();
-            var sessionWMQ = connectionWMQ.CreateSession(false, AcknowledgeMode.AutoAcknowledge);
-            var destination = sessionWMQ.CreateQueue(mqConfigModel.QueueName);
-            var producer = sessionWMQ.CreateProducer(destination);
-            connectionWMQ.Start();
-            var textMessage = sessionWMQ.CreateTextMessage();
-            textMessage.Text = value;
-            producer.Send(textMessage);
-
-            producer.Close();
-            connectionWMQ.Close();
-            destination.Dispose();
-            connectionWMQ.Dispose();
-            Console.WriteLine("Send Successfuly");
+            SendAndPublish(false, value);
         }
 
         public void Publish(string value)
         {
-            var connectionFactory = (IConnectionFactory)ServiceProviderContainer.Instance.GetService(typeof(IConnectionFactory));
-            var mqConfigModel = (IbmMQConfigModel)ServiceProviderContainer.Instance.GetService(typeof(IbmMQConfigModel));
-
-            var connectionWMQ = connectionFactory.CreateConnection();
-            var sessionWMQ = connectionWMQ.CreateSession(false, AcknowledgeMode.AutoAcknowledge);
-            var destination = sessionWMQ.CreateTopic(mqConfigModel.TopicName);
-            destination.SetIntProperty(XMSC.WMQ_TARGET_CLIENT, XMSC.WMQ_TARGET_DEST_MQ);
-            var producer = sessionWMQ.CreateProducer(destination);
-            connectionWMQ.Start();
-
-            var textMessage = sessionWMQ.CreateTextMessage();
-            textMessage.Text = value;
-            producer.Send(textMessage);
-
-            producer.Close();
-            connectionWMQ.Close();
-            destination.Dispose();
-            connectionWMQ.Dispose();
-            Console.WriteLine("Publish Successfuly");
+            SendAndPublish(true, value);
         }
 
         public void Listen(int second = 1)
@@ -86,7 +52,6 @@ namespace IbmMQSample.Services
         public void Subscribe(string topicName)
         {
             var connectionFactory = (IConnectionFactory)ServiceProviderContainer.Instance.GetService(typeof(IConnectionFactory));
-            var mqConfigModel = (IbmMQConfigModel)ServiceProviderContainer.Instance.GetService(typeof(IbmMQConfigModel));
 
             var connection = connectionFactory.CreateConnection();
             connection.ExceptionListener = new ExceptionListener(IbmMQService.OnException);
@@ -97,9 +62,9 @@ namespace IbmMQSample.Services
             connection.Start();
 
             Console.WriteLine("Waiting for messages....");
-            while(true)
+            while (true)
             {
-                var textMessage = (ITextMessage)subscriber.Receive(1000);
+                var textMessage = (ITextMessage)subscriber.Receive();
                 if (textMessage != null)
                 {
                     Console.WriteLine(textMessage.Text);
@@ -112,6 +77,43 @@ namespace IbmMQSample.Services
             connection.Close();
             subscriber.Close();
             topic.Dispose();
+        }
+
+        private void SendAndPublish(bool isPublish, string value)
+        {
+            var connectionFactory = (IConnectionFactory)ServiceProviderContainer.Instance.GetService(typeof(IConnectionFactory));
+            var mqConfigModel = (IbmMQConfigModel)ServiceProviderContainer.Instance.GetService(typeof(IbmMQConfigModel));
+
+            var connectionWMQ = connectionFactory.CreateConnection();
+            var sessionWMQ = connectionWMQ.CreateSession(false, AcknowledgeMode.AutoAcknowledge);
+            var destination = GetDestination(isPublish, sessionWMQ, mqConfigModel);
+            var producer = sessionWMQ.CreateProducer(destination);
+            connectionWMQ.Start();
+
+            var textMessage = sessionWMQ.CreateTextMessage();
+            textMessage.Text = value;
+            producer.Send(textMessage);
+
+            producer.Close();
+            connectionWMQ.Close();
+            destination.Dispose();
+            connectionWMQ.Dispose();
+            Console.WriteLine("Successfuly");
+        }
+
+        private IDestination GetDestination(bool isPublish, ISession session, IbmMQConfigModel mqConfigModel)
+        {
+            IDestination result = null;
+            if (isPublish)
+            {
+                result = session.CreateTopic(mqConfigModel.TopicName);
+                result.SetIntProperty(XMSC.WMQ_TARGET_CLIENT, XMSC.WMQ_TARGET_DEST_MQ);
+            }
+            else
+            {
+                result = session.CreateQueue(mqConfigModel.QueueName);
+            }
+            return result;
         }
 
         static void OnException(Exception ex)
