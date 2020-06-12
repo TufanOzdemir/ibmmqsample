@@ -17,12 +17,10 @@ namespace IbmMQSample
         {
             try
             {
-                var configuration = new ConfigurationBuilder()
-                                      .SetBasePath(System.IO.Directory.GetCurrentDirectory()) //Buranın çalışması için csproj'a ekleme yapıldı. Additions to csproj for this place to work.
-                                      .AddJsonFile("appconfig.json")
-                                      .Build();
+                var services = new ServiceCollection();
+                var configModel = LoadConfiguration(services);
                 var consoleRunner = new AppRunner<MainView>()
-                    .UseMicrosoftDependencyInjection(ConfigureServiceProvider(configuration))
+                    .UseMicrosoftDependencyInjection(ConfigureServiceProvider(services, configModel))
                     .UseErrorHandler((ctx, ex) =>
                     {
                         ctx.Console.WriteLine(ex.Message);
@@ -36,23 +34,37 @@ namespace IbmMQSample
             }
         }
 
-        static ServiceProvider ConfigureServiceProvider(IConfigurationRoot configuration)
+        private static IbmMQConfigModel LoadConfiguration(IServiceCollection services)
         {
-            var services = new ServiceCollection();
-            services.AddTransient<MainView>();
-            RegisterXMS(services, configuration);
-            services.AddSingleton<IQueueManager, IbmMQService>();
-            return services.BuildServiceProvider();
-        }
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(System.IO.Directory.GetCurrentDirectory()) //Buranın çalışması için csproj'a ekleme yapıldı. Additions to csproj for this place to work.
+                .AddJsonFile("appconfig.json")
+                .Build();
 
-        static void RegisterXMS(IServiceCollection services, IConfigurationRoot configuration)
-        {
-            //Register ConfigModel
             var configModel = new IbmMQConfigModel();
             var section = configuration.GetSection(IbmMQConfigModel.ConfigSection);
             section.Bind(configModel);
             services.AddSingleton(configModel);
+            return configModel;
+        }
 
+        static ServiceProvider ConfigureServiceProvider(ServiceCollection services, IbmMQConfigModel configModel)
+        {
+            services.AddTransient<MainView>();
+            if (configModel.UseMock)
+            {
+                services.AddSingleton<IQueueManager, MockMQService>();
+            }
+            else
+            {
+                RegisterXMS(services, configModel);
+                services.AddSingleton<IQueueManager, IbmMQService>();
+            }
+            return services.BuildServiceProvider();
+        }
+
+        static void RegisterXMS(IServiceCollection services, IbmMQConfigModel configModel)
+        {
             //Register ConnectionFactory
             var factoryFactory = XMSFactoryFactory.GetInstance(XMSC.CT_WMQ);
             var connectionFactory = factoryFactory.CreateConnectionFactory();
