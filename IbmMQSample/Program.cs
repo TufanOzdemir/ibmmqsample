@@ -1,13 +1,13 @@
 ﻿using CommandDotNet;
 using IBM.XMS;
 using IbmMQSample.Business;
-using IbmMQSample.Helper;
 using IbmMQSample.Interface;
 using IbmMQSample.Models;
 using IbmMQSample.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using CommandDotNet.IoC.MicrosoftDependencyInjection;
 
 namespace IbmMQSample
 {
@@ -17,13 +17,12 @@ namespace IbmMQSample
         {
             try
             {
-                IServiceCollection services = new ServiceCollection();
                 var configuration = new ConfigurationBuilder()
                                       .SetBasePath(System.IO.Directory.GetCurrentDirectory()) //Buranın çalışması için csproj'a ekleme yapıldı. Additions to csproj for this place to work.
                                       .AddJsonFile("appconfig.json")
                                       .Build();
-                Startup(services, configuration);
                 var consoleRunner = new AppRunner<MainView>()
+                    .UseMicrosoftDependencyInjection(ConfigureServiceProvider(configuration))
                     .UseErrorHandler((ctx, ex) =>
                     {
                         ctx.Console.WriteLine(ex.Message);
@@ -31,17 +30,19 @@ namespace IbmMQSample
                     });
                 consoleRunner.Run(args);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
         }
 
-        static void Startup(IServiceCollection services, IConfigurationRoot configuration)
+        static ServiceProvider ConfigureServiceProvider(IConfigurationRoot configuration)
         {
+            var services = new ServiceCollection();
+            services.AddTransient<MainView>();
             RegisterXMS(services, configuration);
             services.AddSingleton<IQueueManager, IbmMQService>();
-            ServiceProviderContainer.Instance.Initialize(services.BuildServiceProvider());
+            return services.BuildServiceProvider();
         }
 
         static void RegisterXMS(IServiceCollection services, IConfigurationRoot configuration)
