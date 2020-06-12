@@ -1,5 +1,4 @@
 ﻿using IBM.XMS;
-using IbmMQSample.Helper;
 using IbmMQSample.Interface;
 using IbmMQSample.Models;
 using System;
@@ -8,6 +7,15 @@ namespace IbmMQSample.Services
 {
     public class IbmMQService : IQueueManager
     {
+        private readonly IConnectionFactory _connectionFactory;
+        private readonly IbmMQConfigModel _mqConfigModel;
+
+        public IbmMQService(IConnectionFactory connectionFactory, IbmMQConfigModel mqConfigModel)
+        {
+            _connectionFactory = connectionFactory;
+            _mqConfigModel = mqConfigModel;
+        }
+
         public void Send(string value)
         {
             SendAndPublish(false, value);
@@ -20,14 +28,11 @@ namespace IbmMQSample.Services
 
         public void Listen(int second = 1)
         {
-            var connectionFactory = (IConnectionFactory)ServiceProviderContainer.Instance.GetService(typeof(IConnectionFactory));
-            var mqConfigModel = (IbmMQConfigModel)ServiceProviderContainer.Instance.GetService(typeof(IbmMQConfigModel));
-
-            var connection = connectionFactory.CreateConnection();
-            connection.ExceptionListener = new ExceptionListener(IbmMQService.OnException);
+            var connection = _connectionFactory.CreateConnection();
+            connection.ExceptionListener = IbmMQService.OnException;
 
             var session = connection.CreateSession(false, AcknowledgeMode.AutoAcknowledge);
-            IDestination topic = session.CreateQueue(mqConfigModel.QueueName);
+            IDestination topic = session.CreateQueue(_mqConfigModel.QueueName);
             IMessageConsumer consumer = session.CreateConsumer(topic);
             connection.Start();
 
@@ -51,10 +56,8 @@ namespace IbmMQSample.Services
 
         public void Subscribe(string topicName)
         {
-            var connectionFactory = (IConnectionFactory)ServiceProviderContainer.Instance.GetService(typeof(IConnectionFactory));
-
-            var connection = connectionFactory.CreateConnection();
-            connection.ExceptionListener = new ExceptionListener(IbmMQService.OnException);
+            var connection = _connectionFactory.CreateConnection();
+            connection.ExceptionListener = IbmMQService.OnException;
 
             var session = connection.CreateSession(false, AcknowledgeMode.AutoAcknowledge);
             IDestination topic = session.CreateTopic(topicName);
@@ -81,12 +84,9 @@ namespace IbmMQSample.Services
 
         private void SendAndPublish(bool isPublish, string value)
         {
-            var connectionFactory = (IConnectionFactory)ServiceProviderContainer.Instance.GetService(typeof(IConnectionFactory));
-            var mqConfigModel = (IbmMQConfigModel)ServiceProviderContainer.Instance.GetService(typeof(IbmMQConfigModel));
-
-            var connectionWMQ = connectionFactory.CreateConnection();
+            var connectionWMQ = _connectionFactory.CreateConnection();
             var sessionWMQ = connectionWMQ.CreateSession(false, AcknowledgeMode.AutoAcknowledge);
-            var destination = GetDestination(isPublish, sessionWMQ, mqConfigModel);
+            var destination = GetDestination(isPublish, sessionWMQ);
             var producer = sessionWMQ.CreateProducer(destination);
             connectionWMQ.Start();
 
@@ -101,17 +101,17 @@ namespace IbmMQSample.Services
             Console.WriteLine("Successfuly");
         }
 
-        private IDestination GetDestination(bool isPublish, ISession session, IbmMQConfigModel mqConfigModel)
+        private IDestination GetDestination(bool isPublish, ISession session)
         {
             IDestination result = null;
             if (isPublish)
             {
-                result = session.CreateTopic(mqConfigModel.TopicName);
+                result = session.CreateTopic(_mqConfigModel.TopicName);
                 result.SetIntProperty(XMSC.WMQ_TARGET_CLIENT, XMSC.WMQ_TARGET_DEST_MQ);
             }
             else
             {
-                result = session.CreateQueue(mqConfigModel.QueueName);
+                result = session.CreateQueue(_mqConfigModel.QueueName);
             }
             return result;
         }

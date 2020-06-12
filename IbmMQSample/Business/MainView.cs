@@ -1,66 +1,39 @@
-﻿using CommandDotNet.Attributes;
-using IbmMQSample.Helper;
-using IbmMQSample.Interface;
-using System;
+﻿using IbmMQSample.Interface;
+using CommandDotNet;
 
 namespace IbmMQSample.Business
 {
     public class MainView
     {
-        [ApplicationMetadata(Description = "Send Message to queue")]
+        private readonly IQueueManager _queueManager;
+
+        public MainView(IQueueManager queueManager)
+        {
+            _queueManager = queueManager;
+        }
+
+        [Command(Description = "Send Message to queue")]
         public void Send(string message)
         {
-            try
-            {
-                var mqservice = (IQueueManager)ServiceProviderContainer.Instance.GetService(typeof(IQueueManager));
-                mqservice.Send(message);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            _queueManager.Send(message);
         }
 
-        [ApplicationMetadata(Description = "Listen Messages from queue")]
+        [Command(Description = "Listen Messages from queue")]
         public void Listen([Option(LongName = "Second", ShortName = "s", Description = "Time for listen.")]int second = 1)
         {
-            try
-            {
-                var mqservice = (IQueueManager)ServiceProviderContainer.Instance.GetService(typeof(IQueueManager));
-                mqservice.Listen(second);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
+            _queueManager.Listen(second);
         }
 
-        [ApplicationMetadata(Description = "Publish Message to subscriber")]
+        [Command(Description = "Publish Message to subscriber")]
         public void Publish(string message)
         {
-            try
-            {
-                var mqservice = (IQueueManager)ServiceProviderContainer.Instance.GetService(typeof(IQueueManager));
-                mqservice.Publish(message);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            _queueManager.Publish(message);
         }
 
-        [ApplicationMetadata(Description = "Listen Messages from publisher")]
+        [Command(Description = "Listen Messages from publisher")]
         public void Subscribe([Option(LongName = "topic", ShortName = "n", Description = "Topic name for subscribe")]string topicName)
         {
-            try
-            {
-                var mqservice = (IQueueManager)ServiceProviderContainer.Instance.GetService(typeof(IQueueManager));
-                mqservice.Subscribe(topicName);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
+            _queueManager.Subscribe(topicName);
         }
     }
 }

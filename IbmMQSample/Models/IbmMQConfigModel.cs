@@ -3,6 +3,7 @@
     public class IbmMQConfigModel
     {
         public const string ConfigSection = "IbmMQ"; 
+        public bool UseMock { get; set; }
         public string Host { get; set; }
         public int Port { get; set; }
         public string Channel { get; set; }
