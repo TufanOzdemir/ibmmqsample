@@ -1,13 +1,13 @@
-﻿using CommandDotNet.Attributes;
-using IbmMQSample.Helper;
+﻿using IbmMQSample.Helper;
 using IbmMQSample.Interface;
 using System;
+using CommandDotNet;
 
 namespace IbmMQSample.Business
 {
     public class MainView
     {
-        [ApplicationMetadata(Description = "Send Message to queue")]
+        [Command(Description = "Send Message to queue")]
         public void Send(string message)
         {
             try
@@ -21,7 +21,7 @@ namespace IbmMQSample.Business
             }
         }
 
-        [ApplicationMetadata(Description = "Listen Messages from queue")]
+        [Command(Description = "Listen Messages from queue")]
         public void Listen([Option(LongName = "Second", ShortName = "s", Description = "Time for listen.")]int second = 1)
         {
             try
@@ -35,7 +35,7 @@ namespace IbmMQSample.Business
             }
         }
 
-        [ApplicationMetadata(Description = "Publish Message to subscriber")]
+        [Command(Description = "Publish Message to subscriber")]
         public void Publish(string message)
         {
             try
@@ -49,7 +49,7 @@ namespace IbmMQSample.Business
             }
         }
 
-        [ApplicationMetadata(Description = "Listen Messages from publisher")]
+        [Command(Description = "Listen Messages from publisher")]
         public void Subscribe([Option(LongName = "topic", ShortName = "n", Description = "Topic name for subscribe")]string topicName)
         {
             try
