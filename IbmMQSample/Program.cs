@@ -23,7 +23,12 @@ namespace IbmMQSample
                                       .AddJsonFile("appconfig.json")
                                       .Build();
                 Startup(services, configuration);
-                AppRunner<MainView> consoleRunner = new AppRunner<MainView>();
+                var consoleRunner = new AppRunner<MainView>()
+                    .UseErrorHandler((ctx, ex) =>
+                    {
+                        ctx.Console.WriteLine(ex.Message);
+                        return ExitCodes.Error.Result;
+                    });
                 consoleRunner.Run(args);
             }
             catch (System.Exception ex)
